@@ -80,9 +80,7 @@ export default function Hero3D() {
 
       {/* Contenedor del lienzo 3D */}
       <div className="absolute inset-0 w-full h-full opacity-60">
-      {/* Contenedor del lienzo 3D */}
-      <div className="absolute inset-0 w-full h-full opacity-60">
-        <Canvas camera={{ position:, fov: 60 }}>
+        <Canvas camera={{ position: [0, 0, 5], fov: 60 }}>
           <ambientLight intensity={0.4} />
           <pointLight position={[10, 10, 10]} intensity={1} color={'#00E5FF'} />
           <Suspense fallback={null}>
