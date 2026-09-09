@@ -3,103 +3,127 @@ import { Suspense, useRef, useMemo, useState, useEffect } from 'react'
 import * as THREE from 'three'
 import { motion } from 'framer-motion'
 
-function NeuronNetwork({ pointer }: { pointer: THREE.Vector2 | null }) {
-  const group = useRef<THREE.Group>(null)
+// Componente matemático de la malla ondulada
+function WaveGrid() {
+  const meshRef = useRef<THREE.Points>(null)
   const { size } = useThree()
-  const particles = 80
 
-  const nodes = useMemo(() => {
-    const arr = []
-    for (let i = 0; i < particles; i++) {
-      const angle = Math.random() * Math.PI * 2
-      const radius = 200 + Math.random() * 300
-      const x = Math.cos(angle) * radius * (Math.random() * 0.6 + 0.7)
-      const y = (Math.random() - 0.5) * 200
-      const z = Math.sin(angle) * radius * (Math.random() * 0.6 + 0.7)
-      arr.push(new THREE.Vector3(x, y, z))
-    }
-    return arr
-  }, [particles])
+  // Configuración de la cuadrícula de puntos
+  const count = 45 // Número de puntos a lo ancho y largo
+  const numParticles = count * count
 
-  useFrame((state, delta) => {
-    if (!group.current) return
-    const g = group.current
-    // slow rotation
-    g.rotation.y += delta * 0.02
-    // nodes pulsate
-    g.children.forEach((child, i) => {
-      const scale = 0.6 + Math.sin(state.clock.elapsedTime * 2 + i) * 0.25
-      child.scale.setScalar(scale)
-      // pointer interaction: attract nearest node
-      if (pointer) {
-        const worldPos = g.localToWorld(child.position.clone())
-        const dx = pointer.x - worldPos.x * 0.01
-        const dy = pointer.y - worldPos.y * 0.01
-        child.position.x += dx * 0.5 * delta
-        child.position.y += dy * 0.5 * delta
+  const [positions, setPositions] = useMemo(() => {
+    const pos = new Float32Array(numParticles * 3)
+    let i = 0
+    for (let x = 0; x < count; x++) {
+      for (let z = 0; z < count; z++) {
+        // Centramos la malla en las coordenadas X y Z
+        pos[i] = (x - count / 2) * 0.35 
+        pos[i + 1] = 0 // Altura inicial (Y)
+        pos[i + 2] = (z - count / 2) * 0.35
+        i += 3
       }
-    })
+    }
+    return [pos]
+  }, [numParticles, count])
+
+  // Animación matemática de las ondas en cada fotograma
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime()
+    if (!meshRef.current) return
+
+    const positionAttribute = meshRef.current.geometry.attributes.position
+    let i = 0
+
+    for (let x = 0; x < count; x++) {
+      for (let z = 0; z < count; z++) {
+        // Fórmula matemática para calcular las ondas senoidales cruzadas
+        const xAngle = (x * 0.1) + time * 0.8
+        const zAngle = (z * 0.1) + time * 0.5
+        
+        // Modificamos la altura (Y) de cada punto individualmente
+        positionAttribute.setY(i, (Math.sin(xAngle) + Math.cos(zAngle)) * 0.25)
+        i++
+      }
+    }
+    positionAttribute.needsUpdate = true
   })
 
   return (
-    <group ref={group} position={[0, 0, 0]}>
-      {nodes.map((pos, i) => (
-        <mesh key={i} position={[pos.x * 0.01, pos.y * 0.01, pos.z * 0.01]}>
-          <sphereGeometry args={[0.7, 16, 12]} />
-          <meshStandardMaterial emissive={'#00E5FF'} emissiveIntensity={0.6} color={'#86f0ff'} metalness={0.8} roughness={0.2} />
-        </mesh>
-      ))}
-      {/* simple connecting lines */}
-      <lineSegments>
-        <bufferGeometry attach="geometry" >
-          {/* we'll construct dynamic lines server-side in a simple way */}
-        </bufferGeometry>
-      </lineSegments>
-    </group>
+    <points ref={meshRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+          count={numParticles}
+          array={positions}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        color="#00E5FF"
+        size={0.03}
+        sizeAttenuation={true}
+        transparent
+        opacity={0.4}
+      />
+    </points>
   )
 }
 
-export default function Hero() {
-  const [pointer, setPointer] = useState<THREE.Vector2 | null>(null)
-
-  useEffect(() => {
-    function onMove(e: MouseEvent) {
-      setPointer(new THREE.Vector2((e.clientX - window.innerWidth / 2) * 0.05, (window.innerHeight / 2 - e.clientY) * 0.05))
-    }
-    window.addEventListener('mousemove', onMove)
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [])
-
-  const whatsapp = "https://api.whatsapp.com/send?phone=584243014920&text=Hola%20Jonathan%2C%20quiero%20solicitar%20la%20Auditor%C3%ADa%20de%20Datos%20Gratuita%20de%2015%20minutos%20para%20mi%20empresa."
-
+// Componente principal de la sección
+export default function Hero3D() {
   return (
-    <section id="inicio" className="relative h-screen">
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 0, 16], fov: 50 }}>
-          <ambientLight intensity={0.3} />
-          <pointLight position={[10, 10, 10]} intensity={0.8} color={'#00E5FF'} />
+    <div className="relative min-h-screen bg-[#030303] text-white flex flex-col items-center justify-center overflow-hidden px-4">
+      {/* Luces y sombras de fondo de ambiente */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 w-full h-[400px] bg-gradient-to-t from-[#030303] via-transparent to-transparent z-10 pointer-events-none" />
+
+      {/* Contenedor del lienzo 3D */}
+      <div className="absolute inset-0 w-full h-full opacity-60">
+        <Canvas camera={{ position:, fov: 60 }}>
+          <ambientLight intensity={0.4} />
+          <pointLight position={[10, 10, 10]} intensity={1} color={'#00E5FF'} />
           <Suspense fallback={null}>
-            <NeuronNetwork pointer={pointer} />
+            <group position={[0, -1, 0]} rotation={[0.2, 0, 0]}>
+              <WaveGrid />
+            </group>
           </Suspense>
         </Canvas>
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto h-full flex items-center px-6">
-        <div className="glass p-10 rounded-xl w-full">
-          <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-3xl md:text-4xl font-semibold leading-tight">
-            Tu empresa genera gigabytes de datos diarios. Nosotros los transformamos en decisiones que reducen costos y anticipan el mercado.
-          </motion.h1>
+      {/* Textos y contenido estructurado al frente */}
+      <div className="relative z-20 max-w-4xl text-center flex flex-col items-center mt-12">
+        <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-medium text-cyan-400 bg-cyan-950/40 rounded-full border border-cyan-800/30 mb-6 backdrop-blur-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          MODULAR COMPUTE NETWORK
+        </span>
 
-          <p className="mt-4 text-silver">Estructuramos el caos. Garantizamos ventajas predictivas.</p>
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white via-neutral-200 to-neutral-500 max-w-3xl leading-tight">
+          Modular Compute Powered By CORA Engine.
+        </h1>
 
-          <div className="mt-6 flex gap-4">
-            <a href={whatsapp} target="_blank" rel="noreferrer" className="btn-primary px-5 py-3 rounded-md font-medium">
-              Solicitar Auditoría de Datos Inicial Gratuita (15 min)
-            </a>
-            <button className="btn-outline px-5 py-3 rounded-md font-medium">Probar Demo en Vivo</button>
-          </div>
+        <p className="mt-6 text-neutral-400 text-sm sm:text-base max-w-lg font-light leading-relaxed">
+          Voice triggered. Chain-aware. Built to scale decentralized operations globally.
+        </p>
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
+          <button className="px-6 py-3 rounded-full bg-white text-black font-medium text-sm hover:bg-neutral-200 transition-all shadow-[0_0_25px_rgba(0,229,255,0.3)]">
+            Deploy CORA Engine
+          </button>
+          <button className="px-6 py-3 rounded-full bg-neutral-900/80 text-neutral-300 font-medium text-sm border border-neutral-800 hover:bg-neutral-800 transition-all backdrop-blur-sm">
+            View Live Metrics
+          </button>
         </div>
       </div>
-    </section>
+
+      {/* Fila inferior de logos corporativos estéticos */}
+      <div className="absolute bottom-12 z-20 w-full max-w-3xl px-6 flex flex-wrap justify-between items-center opacity-20 text-[10px] tracking-[0.2em] uppercase font-mono grayscale hidden sm:flex">
+        <span>Google</span>
+        <span>Meta</span>
+        <span>Linux Foundation</span>
+        <span>OpenAI</span>
+      </div>
+    </div>
   )
 }
