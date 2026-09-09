@@ -78,9 +78,9 @@ export default function Hero() {
         <Canvas camera={{ position: [0, 0, 16], fov: 50 }}>
           <ambientLight intensity={0.3} />
           <pointLight position={[10, 10, 10]} intensity={0.8} color={'#00E5FF'} />
-          <React.Suspense fallback={null}>
+          <Suspense fallback={null}>
             <NeuronNetwork pointer={pointer} />
-          </React.Suspense>
+          </Suspense>
         </Canvas>
       </div>
 
