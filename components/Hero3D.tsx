@@ -12,14 +12,13 @@ function WaveGrid() {
   const count = 45 // Número de puntos a lo ancho y largo
   const numParticles = count * count
 
-  const positions = useMemo(() => {
+    const positions = useMemo(() => {
     const pos = new Float32Array(numParticles * 3)
     let i = 0
     for (let x = 0; x < count; x++) {
       for (let z = 0; z < count; z++) {
-        // Centramos la malla en las coordenadas X y Z
         pos[i] = (x - count / 2) * 0.35 
-        pos[i + 1] = 0 // Altura inicial (Y)
+        pos[i + 1] = 0 
         pos[i + 2] = (z - count / 2) * 0.35
         i += 3
       }
