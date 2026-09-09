@@ -12,7 +12,7 @@ function WaveGrid() {
   const count = 45 // Número de puntos a lo ancho y largo
   const numParticles = count * count
 
-  const [positions, setPositions] = useMemo(() => {
+  const positions = useMemo(() => {
     const pos = new Float32Array(numParticles * 3)
     let i = 0
     for (let x = 0; x < count; x++) {
@@ -24,7 +24,7 @@ function WaveGrid() {
         i += 3
       }
     }
-    return [pos]
+    return pos
   }, [numParticles, count])
 
   // Animación matemática de las ondas en cada fotograma
